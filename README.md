@@ -21,78 +21,60 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+# nest-rag-system
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+This repository contains a medical RAG (Retrieval-Augmented Generation) system built with NestJS. It generates personalised, evidence-based doctor commentaries for patients based on their blood test results and health profile, using a local medical knowledge base and large language models.
 
-## Project setup
+## What does it do?
+- Accepts patient data, current blood test results, and previous results/profile via an API endpoint.
+- Compares current and previous results to highlight improvements or deteriorations in biomarkers.
+- Analyses changes in the patient's health profile (e.g. weight, exercise, diet, supplements).
+- Retrieves relevant medical context from markdown files in the `knowledge_base/` folder.
+- Generates a British English doctor commentary, mentioning and explaining changes, and providing actionable advice.
 
-```bash
-$ npm install
+## How does it work?
+1. **Knowledge Base:** Medical information is stored in markdown files under `knowledge_base/`. These cover biomarkers, conditions, and lifestyle factors.
+2. **API:** The main endpoint `/rag/generate-comment` receives a payload with patient details, current results, previous results, and previous profile.
+3. **Comparison Logic:** The service compares current and previous results and profile, detecting and summarising changes.
+4. **Retrieval:** Relevant context is retrieved from the knowledge base using vector embeddings.
+5. **Generation:** A large language model (Gemini or OpenAI) generates a personalised doctor commentary, following strict medical and stylistic rules.
+
+## How to run
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Start the server:
+   ```bash
+   npm run start
+   ```
+3. The API will be available at `http://localhost:3000` (default).
+
+## Example usage
+Send a POST request to `/rag/generate-comment` with a payload like:
+```json
+{
+  "patient": { ... },
+  "results": [ ... ],
+  "prevData": {
+    "results": [ ... ],
+    "profile": { ... }
+  }
+}
 ```
+The response will contain a British English doctor commentary, personalised to the patient's data and changes.
 
-## Compile and run the project
+## Project structure
+- `src/rag/`: Main RAG logic, service, controller, DTOs
+- `knowledge_base/`: Medical markdown files used for context
+- `test/`: E2E tests
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Technologies
+- NestJS
+- LangChain
+- ChromaDB
+- OpenAI / Gemini LLMs
+- class-validator, class-transformer
 
 ## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+MIT
