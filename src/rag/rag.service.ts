@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
+import { Injectable, OnModuleInit, Logger, BadRequestException } from '@nestjs/common';
 import { OpenAIEmbeddings, ChatOpenAI } from '@langchain/openai';
 import { ConfigService } from '@nestjs/config';
 import { Document } from '@langchain/core/documents';
@@ -23,16 +23,18 @@ export class RagService implements OnModuleInit {
     private llm: ChatOpenAI | ChatGoogleGenerativeAI;
     private embeddings: OpenAIEmbeddings;
     private vectorStore: Chroma;
+    private lastPrompt: string | null = null;
 
     constructor(private configService: ConfigService) {
         const openAIApiKey = this.configService.get<string>('OPENAI_API_KEY');
-        const googleApiKey = this.configService.get<string>('GOOGLE_API_KEY');
-        // this.llm = new ChatOpenAI({ openAIApiKey });
-        this.llm = new ChatGoogleGenerativeAI({ 
-            apiKey: googleApiKey,
-            model: 'gemini-2.0-flash',
-            temperature: 0.2
-        });
+        this.llm = new ChatOpenAI({ openAIApiKey });
+
+        // const googleApiKey = this.configService.get<string>('GOOGLE_API_KEY');
+        // this.llm = new ChatGoogleGenerativeAI({ 
+        //     apiKey: googleApiKey,
+        //     model: 'gemini-2.0-flash',
+        //     temperature: 0.2
+        // });
 
         this.embeddings = new OpenAIEmbeddings({
             model: "text-embedding-3-small",
@@ -41,10 +43,6 @@ export class RagService implements OnModuleInit {
     }
 
     async onModuleInit() {
-        // this.vectorStore = new Chroma(this.embeddings, {
-        //     collectionName: 'nest-rag-system',
-        //     url: 'http://localhost:8000',
-        // })
         this.vectorStore = new Chroma(this.embeddings, {
             collectionName: 'medical-knowledge-base',
             url: 'http://localhost:8000',
@@ -140,6 +138,12 @@ export class RagService implements OnModuleInit {
 
     async generateDoctorComment(dto: GenerateCommentDto & { language?: string }): Promise<string> {
         const { patient, results, prevData, language } = dto;
+if (!patient) {
+            throw new BadRequestException('Patient field is required.');
+        }
+        if (!results || !Array.isArray(results)) {
+            throw new BadRequestException('Results field is required and must be an array.');
+        }
         this.logger.log(`Generating doctor comment for patient with goal: ${JSON.stringify(patient.goal)}`);
 
         // --- 1. Compare current vs previous biomarkers ---
@@ -391,6 +395,19 @@ export class RagService implements OnModuleInit {
             - Additional Info: ${patient.additionalInformation || 'None'}
         `;
     
+        // Save the last prompt string
+        const formattedPrompt = await prompt.format({
+            context,
+            patientProfile: patientProfileString,
+            results: JSON.stringify(results, null, 2),
+            inRangeMarkerNames: inRangeMarkers.map(m => m.name).join(', '),
+            goal: patient.goal || 'Not specified',
+            biomarkerChangeSummary,
+            profileChangeSummary,
+            hasSignificantMarkers,
+        });
+        this.lastPrompt = formattedPrompt;
+
         const result = await chain.invoke({
             context,
             patientProfile: patientProfileString,
@@ -434,7 +451,7 @@ export class RagService implements OnModuleInit {
                 const pageContent = results.documents[0][i];
 
                 // Ensure pageContent is not null
-                if (pageContent) {
+        if (pageContent) {
                     relevantDocs.push(new Document({
                         pageContent: pageContent,
                         metadata: results.metadatas[0][i] || {},
@@ -475,5 +492,9 @@ export class RagService implements OnModuleInit {
             this.logger.error(`Error en askQuestion: ${error.message}`, error.stack);
             throw error; // Throw the error to NestJS to handle it
         }
+    }
+
+    getLastPrompt(): string | null {
+        return this.lastPrompt;
     }
 }

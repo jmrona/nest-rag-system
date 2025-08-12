@@ -12,6 +12,9 @@ export class RagController {
     const comment = await this.ragService.generateDoctorComment({
       ...generateCommentDto
     });
-    return { comment };
+    
+    // Get the prompt used (from ragService)
+    const prompt = await this.ragService.getLastPrompt?.();
+    return { comment, prompt };
   }
 }
