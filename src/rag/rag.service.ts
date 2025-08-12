@@ -81,10 +81,10 @@ export class RagService implements OnModuleInit {
         try {
             const collection = await this.vectorStore.ensureCollection();
             await collection.delete({ where: {} });
-            this.logger.log('Colección eliminada');
+            this.logger.log('Collection deleted');
 
         } catch (error) {
-            this.logger.warn(`Error al eliminar la colección: ${error.message}`);
+            this.logger.warn(`Error deleting collection: ${error.message}`);
 
         }
         
@@ -137,8 +137,8 @@ export class RagService implements OnModuleInit {
     }
 
     async generateDoctorComment(dto: GenerateCommentDto & { language?: string }): Promise<string> {
-        const { patient, results, prevData, language } = dto;
-if (!patient) {
+        const { patient, results, prevData } = dto;
+        if (!patient) {
             throw new BadRequestException('Patient field is required.');
         }
         if (!results || !Array.isArray(results)) {
